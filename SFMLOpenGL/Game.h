@@ -39,6 +39,9 @@ private:
 	void render();
 	void renderCube(mat4 & cubeModel, GLuint prog);
 	void unload();
+	void EndScreen();
+	bool Game_On = true;
+	void startGame();
 };
 
 #endif

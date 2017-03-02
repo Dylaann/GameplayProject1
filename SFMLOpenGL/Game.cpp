@@ -42,8 +42,8 @@ float speed = 0.1f;
 float tilt = 0.001f;
 float xpos = 0.0f;
 float model1Pos = 100.0f;
-float model2Pos = 120.0f;
-float model3Pos = 140.0f;
+float model2Pos = 140.0f;
+float model3Pos = 160.0f;
 
 int model1Posx = 0;
 int model2Posx = 3;
@@ -53,7 +53,9 @@ int model1Postempx = 0;
 int model2Postempx = 0;
 int model3Postempx = 0;
 
-
+float distance1;
+float distance2;
+float distance3;
 
 
 mat4 mvp, projection, 
@@ -88,7 +90,7 @@ void Game::run()
 
 	Event event;
 
-	modelFloor = scale(modelFloor, glm::vec3(6, 1, 100));
+	
 	while (isRunning){
 
 #if (DEBUG >= 2)
@@ -105,10 +107,9 @@ void Game::run()
 
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Left))
 			{
-				if (xpos > -6.0f)
+				if (modelPlayer[3].x > -4.5f)
 				{
-					xpos -= 0.4f;
-					modelPlayer = translate(modelPlayer, vec3(-0.4f, 0, 0));
+					modelPlayer = translate(modelPlayer, vec3(-0.5f, 0, 0));
 				}
 
 				if (tilt < 0.1f)
@@ -127,10 +128,9 @@ void Game::run()
 
 			else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Right))
 			{
-				if (xpos < 6.0f)
+				if (modelPlayer[3].x < 4.5f)
 				{
-					xpos += 0.4f;
-					modelPlayer = translate(modelPlayer, vec3(0.4f, 0, 0));
+					modelPlayer = translate(modelPlayer, vec3(0.5f, 0, 0));
 				}
 
 				if (tilt > -0.1f)
@@ -154,8 +154,16 @@ void Game::run()
 			{
 			}
 		}
-		update();
-		render();
+
+		if (Game_On)
+		{
+			update();
+			render();
+		}
+		else
+		{
+			EndScreen();
+		}
 	}
 
 #if (DEBUG >= 2)
@@ -167,6 +175,8 @@ void Game::run()
 
 void Game::initialize()
 {
+	Game_On = true;
+	score = 0;
 	isRunning = true;
 	GLint isCompiled = 0;
 	GLint isLinked = 0;
@@ -527,44 +537,7 @@ void Game::initialize()
 		vec3(0.0f, 1.0f, 0.0f)		// 0.0f, 1.0f, 0.0f Look Down and 0.0f, -1.0f, 0.0f Look Up
 		);
 
-	// Model matrix
-	modelFloor = mat4(
-		1.0f					// Identity Matrix
-		);
-	 
-	modelPlayer = mat4(
-		1.0f
-		);
-	model2 = mat4(
-		1.0f
-		);
-	modelLeftWall = mat4(
-		1.0f
-		);
-	modelRightWall = mat4(
-		1.0f
-		);
-	model1 = mat4(
-		1.0f
-		);
-	model3 = mat4(
-		1.0f
-		);
-
-	modelRightWall = translate(modelRightWall, vec3(5.5, 3, 0));
-	modelRightWall = scale(modelRightWall, vec3(0.5, 2, 200));
-	modelLeftWall = translate(modelLeftWall, vec3(-5.5, 3, 0));
-	modelLeftWall = scale(modelLeftWall, vec3(0.5, 2, 200));
-
-	model1 = translate(model1, vec3(model1Posx, 3, -model1Pos));
-	model1 = scale(model1, vec3(0.75, 0.75, 0.75));
-	model2 = translate(model2, vec3(model2Posx, 3, -model2Pos));
-	model2 = scale(model2, vec3(0.75, 0.75, 0.75));
-	model3 = translate(model3, vec3(model3Posx, 3, -model3Pos));
-	model3 = scale(model3, vec3(0.75, 0.75, 0.75));
-
-	modelPlayer = translate(modelPlayer, vec3(0, 3, 4));
-	modelPlayer = scale(modelPlayer, vec3(0.5, 0.5, 0.5));
+	startGame();
 
 	// Enable Depth Test
 	glEnable(GL_DEPTH_TEST);
@@ -584,13 +557,19 @@ void Game::update()
 	// For mutiple objects (cubes) create multiple models
 	// To alter Camera modify view & projection
 	
-	modelFloor = rotate(modelFloor, 0.001f, glm::vec3(1, 0, 0));			//keep floor moving
-	modelLeftWall = rotate(modelLeftWall, -0.001f, glm::vec3(0, 1, 0));     //walls rotating
-	modelRightWall = rotate(modelRightWall, 0.001f, glm::vec3(0, 1, 0));
-	model1 = translate(model1, vec3(0, 0, speed));							//cubes coming at player
-	model2 = translate(model2, vec3(0, 0, speed));
-	model3 = translate(model3, vec3(0, 0, speed));
+		modelFloor = rotate(modelFloor, 0.001f, glm::vec3(1, 0, 0));			//keep floor moving
+		modelLeftWall = rotate(modelLeftWall, -0.001f, glm::vec3(0, 1, 0));     //walls rotating
+		modelRightWall = rotate(modelRightWall, 0.001f, glm::vec3(0, 1, 0));
+		model1 = translate(model1, vec3(0, 0, speed));							//cubes coming at player
+		model2 = translate(model2, vec3(0, 0, speed));
+		model3 = translate(model3, vec3(0, 0, speed));
 
+		model1Postempx += 1;
+
+		if (model1Postempx > 3)
+		{
+			model1Postempx = -3;
+		}
 
 	if (model1[3].z > 10)
 	{
@@ -599,12 +578,12 @@ void Game::update()
 
 	if (model2[3].z > 10)
 	{
-		model2 = translate(model2, vec3(model2Postempx, 0, -model2Pos - 50));
+		model2 = translate(model2, vec3(model1Postempx, 0, -model2Pos - 50));
 	}
 
 	if (model3[3].z > 10)
 	{
-		model3 = translate(model3, vec3(model3Postempx, 0, -model3Pos - 50));
+		model3 = translate(model3, vec3(model1Postempx, 0, -model3Pos - 50));
 	}
 
 	if (score < 10000)
@@ -621,6 +600,23 @@ void Game::update()
 	{
 		score += 4;
 		speed = 0.4f;
+	}
+
+	distance1 = std::sqrt(((modelPlayer[3].x - model1[3].x) * (modelPlayer[3].x - model1[3].x)) + ((modelPlayer[3].z - model1[3].z) * (modelPlayer[3].z - model1[3].z)));
+	distance2 = std::sqrt(((modelPlayer[3].x - model2[3].x) * (modelPlayer[3].x - model2[3].x)) + ((modelPlayer[3].z - model2[3].z) * (modelPlayer[3].z - model2[3].z)));
+	distance3 = std::sqrt(((modelPlayer[3].x - model3[3].x) * (modelPlayer[3].x - model3[3].x)) + ((modelPlayer[3].z - model3[3].z) * (modelPlayer[3].z - model3[3].z)));
+
+	if (distance1 < 1)
+	{
+		Game_On = false;
+	}
+	if (distance2 < 1)
+	{
+		Game_On = false;
+	}
+	if (distance3 < 1)
+	{
+		Game_On = false;
 	}
 }
 
@@ -658,9 +654,9 @@ void Game::render()
 
 	renderCube(modelFloor, progID);
 	renderCube(modelPlayer, progID2);
-	renderCube(model1, progID3);
-	renderCube(model2, progID3);
-	renderCube(model3, progID3);
+	renderCube(model1, progID2);
+	renderCube(model2, progID2);
+	renderCube(model3, progID2);
 	renderCube(modelLeftWall, progID3);
 	renderCube(modelRightWall, progID3);
 
@@ -730,7 +726,7 @@ void Game::renderCube(mat4 & cubeModel, GLuint prog)
 	// Send transformation to shader mvp uniform [0][0] is start of array
 	glUniformMatrix4fv(mvpID, 1, GL_FALSE, &mvp[0][0]);
 
-	// Set Active Texture .... 32 GL_TEXTURE0 .... GL_TEXTURE31
+	// Set Active Texture.... 32 GL_TEXTURE0 .... GL_TEXTURE31
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(textureID, 0); // 0 .... 31
 
@@ -767,4 +763,77 @@ void Game::unload()
 	glDeleteBuffers(1, &vbo);		// Delete Vertex Buffer
 	glDeleteBuffers(1, &vib);		// Delete Vertex Index Buffer
 	stbi_image_free(img_data);		// Free image stbi_image_free(..)
+}
+
+void Game::EndScreen()
+{
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	window.pushGLStates();
+	 
+	window.clear();
+	string hud = " Game Over \n Score ["
+		+ string(toString(score))
+		+ "] \n \n Press Enter To Replay";
+
+	Text text(hud, font);
+
+	text.setColor(sf::Color(255, 255, 255, 170));
+	text.setPosition(250.f, 200.f);
+
+	window.draw(text);
+	// Restore OpenGL render states
+	// https://www.sfml-dev.org/documentation/2.0/classsf_1_1RenderTarget.php#a8d1998464ccc54e789aaf990242b47f7
+
+	window.popGLStates();
+
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Return))
+	{
+		startGame();
+	}
+	window.display();
+}
+void Game::startGame()
+{
+	score = 0;
+	modelFloor = mat4(
+		1.0f					// Identity Matrix
+		);
+
+	modelPlayer = mat4(
+		1.0f
+		);
+	model2 = mat4(
+		1.0f
+		);
+	modelLeftWall = mat4(
+		1.0f
+		);
+	modelRightWall = mat4(
+		1.0f
+		);
+	model1 = mat4(
+		1.0f
+		);
+	model3 = mat4(
+		1.0f
+		);
+
+	modelRightWall = translate(modelRightWall, vec3(5.5, 3, 0));
+	modelRightWall = scale(modelRightWall, vec3(0.5, 2, 200));
+	modelLeftWall = translate(modelLeftWall, vec3(-5.5, 3, 0));
+	modelLeftWall = scale(modelLeftWall, vec3(0.5, 2, 200));
+
+	model1 = translate(model1, vec3(model1Posx, 3, -model1Pos));
+	model1 = scale(model1, vec3(0.75, 0.75, 0.75));
+	model2 = translate(model2, vec3(model2Posx, 3, -model2Pos));
+	model2 = scale(model2, vec3(0.75, 0.75, 0.75));
+	model3 = translate(model3, vec3(model3Posx, 3, -model3Pos));
+	model3 = scale(model3, vec3(0.75, 0.75, 0.75));
+
+	modelPlayer = translate(modelPlayer, vec3(0, 3, 4));
+	modelPlayer = scale(modelPlayer, vec3(0.5, 0.5, 0.5));
+	modelFloor = scale(modelFloor, glm::vec3(6, 1, 100));
+	Game_On = true;
+
 }
