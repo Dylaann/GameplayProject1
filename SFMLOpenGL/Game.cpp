@@ -566,9 +566,9 @@ void Game::update()
 
 		model1Postempx += 1;
 
-		if (model1Postempx > 3)
+		if (model1Postempx > 2)
 		{
-			model1Postempx = -3;
+			model1Postempx = -2;
 		}
 
 	if (model1[3].z > 10)
